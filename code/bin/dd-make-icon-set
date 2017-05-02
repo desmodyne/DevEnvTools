@@ -23,6 +23,21 @@
 
 
 # -----------------------------------------------------------------------------
+# determine platform: http://stackoverflow.com/a/18434831
+
+case "${OSTYPE}" in
+    darwin*)
+        ;;
+    linux-gnu*)
+        ;;
+    *)
+        echo "Unsupported operating system: ${OSTYPE}"
+        exit -1
+        ;;
+esac
+
+
+# -----------------------------------------------------------------------------
 # define functions
 
 # http://stackoverflow.com/a/6212408
@@ -41,8 +56,7 @@ optional arguments:
   -?, --help            print this help message
   target folder         path to target folder where icons will be created;
                         if omitted, the folder will be created next to the
-                        source using its filename without suffix as name;
-                        an existing folder will be re-used if it is empty
+                        source using its filename without suffix as name
 EOT
 
     # shellcheck disable=SC2059
@@ -137,18 +151,8 @@ then
     target="${source%.*}"
 fi
 
-if [ -e "${target}" ]
+if [ ! -d "${target}" ]
 then
-    if [ -d "${target}" ]
-    then
-        # http://stackoverflow.com/a/17902999
-        if [ -n "$(ls -A "${target}")" ]
-        then
-            echo "directory ${target} exists and is not empty"
-            exit -1
-        fi
-    fi
-else
     mkdir -p "${target}"
 fi
 
@@ -166,7 +170,7 @@ do
     # shellcheck disable=SC2059
     cmd_args="$(printf -- "${cmd_args_tmpl}" "${density}" "${size}")"
 
-    echo "${cmd_exec} ${cmd_args} ${source} ${target}/${filename}"
+    echo "${cmd_exec} ${cmd_args} \"${source}\" \"${target}/${filename}\""
 
     # shellcheck disable=SC2086
     if ! "${cmd_exec}" ${cmd_args} "${source}" "${target}/${filename}"
