@@ -13,25 +13,9 @@
 
 
 # -----------------------------------------------------------------------------
-# open file or folder in Atom
+# open git repo in SourceTree
 
 # based on https://gist.github.com/shauvik/f6b22731c9df74b092d3
-
-# TODO: walk up folder hierarchy to find repo root with .git
-
-# shell script snippet to detect git repo
-property isRepoRoot : "#!/usr/bin/env bash
-echo 'hello'
-echo \"first param: ${1}\"
-exit
-if [ -d \"${1}/.git\" ]
-then
-    echo true
-else
-    echo false
-fi
-"
-
 
 tell application "Finder"
     # NOTE: append as list seems redundant
@@ -56,76 +40,50 @@ tell application "Finder"
         set selectedItem to first item of selectedItems
         log "selectedItem   : [" & class of selectedItem &  "] - " & selectedItem
 
-        # NOTE: need to use "as alias" so conversions to POSIX paths succeeds
-        # https://developer.apple.com/library/content/documentation/ ...
-        #  ... LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/ ...
-        #  ... ReferenceFilesandFolders.html
-        # search for "AppleScript: Converting an alias to a POSIX path string"
-        # TODO: is this really true ?!?
-        # http://www.satimage.fr/software/en/smile/external_codes/file_paths.html
-        # https://developer.apple.com/library/content/technotes/tn2065/ ...
-        #  ... _index.html#//apple_ref/doc/uid/DTS10003093-CH1-SECTION4
-
         if class of selectedItem is folder then
-            set selectedFolder to selectedItem as alias
+            set selectedFolder to selectedItem
         else
-            set selectedFolder to container of selectedItem as alias
+            set selectedFolder to container of selectedItem
         end if
         log "selectedFolder : [" & class of selectedFolder &  "] - " & selectedFolder
 
-        set nameOfFolder to POSIX path of selectedFolder
-        log "nameOfFolder : [" & class of nameOfFolder &  "] - " & nameOfFolder
+        repeat while class of selectedFolder is not disk
+            # NOTE: my is required to prevent execution error:
+            # Finder got an error: Can’t continue is_gitRepoRoot. (-1708)
+            # http://stackoverflow.com/q/2767069
+            if my is_gitRepoRoot(selectedFolder) then
+                set gitRepoRoot to selectedFolder
+                exit repeat
+            else
+                set selectedFolder to container of selectedFolder
+                log "selectedFolder : [" & class of selectedFolder &  "] - " & selectedFolder
+            end if
+        end repeat
 
-        set theScriptResult to do shell script isRepoRoot & nameOfFolder
-        # log "theScriptResult : [" & class of theScriptResult &  "] - " & theScriptResult
-
-
-        # NOTE: Finder per default does not "see" a hidden .git folder
-        # https://apple.stackexchange.com/a/235203
-        # set result to do shell script "/bin/bash if [ -d " & quoted form of POSIX path of name of selectedFolder & " ]; then exit 1; else exit 0; done"
-        # log "result: " & result
-
-        # set AppleScript's text item delimiters to return
-        # set foldersInFolder to name of folders of selectedFolder
-        # log "foldersInFolder : [" & class of foldersInFolder &  "] - " & foldersInFolder
-        #
-        # if ".git" is in foldersInFolder then
-        #     set repoRootFolder to selectedFolder
-        #     log "selectedFolder : [" & class of selectedFolder &  "] - " & selectedFolder
-        # end if
-
-        # repeat while class of selectedFolder is not disk
-        #     set selectedFolder to container of selectedFolder
-        #     log "selectedFolder : [" & class of selectedFolder &  "] - " & selectedFolder
-        #     set foldersInFolder to name of folders of selectedFolder
-        # end repeat
-
-        #
-        #
-        #     log "itemsInFolder : [" & class of itemsInFolder &  "] - " & itemsInFolder
-        #     # log class of itemsInFolder
-        #     # log itemsInFolder
-        # end if
     else
         log class of selectedItems
         log selectedItems
     end if
 
-    # if (count of selectedItems) is not 0 then
-    #     set myItem to first item of selectedItems
-    #     if class of myItem is alias file then
-    #         set myItem to original item of myItem
-    #     end if
-    #     if class of myItem is in {file, document file, internet location file} then
-    #         set myItem to container of myItem
-    #     end if
-    # else if the (count of window) is not 0 then
-    #     set myItem to folder of the front window
-    # else
-    #     set myItem to path to desktop folder
-    # end if
-    # my open_SourceTree(myItem)
+    my open_SourceTree(gitRepoRoot)
+
 end tell
+
+# TODO: document data type of path
+on is_gitRepoRoot(path)
+    set gitFolder to path as text & ".git"
+    log "gitFolder : [" & class of gitFolder &  "] - " & gitFolder
+
+    # NOTE: Finder per default does not "see" a hidden .git folder,
+    # so use System Events: https://apple.stackexchange.com/q/273869
+    tell application "System Events"
+        if exists folder gitFolder then
+            return true
+        else
+            return false
+        end if
+    end tell
+end is_gitRepoRoot
 
 on open_SourceTree(myItem)
     set myPath to POSIX path of (myItem as string)
