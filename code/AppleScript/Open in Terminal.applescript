@@ -9,12 +9,24 @@
 # created : 2017-05-01
 
 
-# TOOD: make sure this runs on macOS
+# NOTE: this script is intended to be run as application from Finder toolbar
 
 # NOTE: alternate AppleScript comment characters: -- or (* ... *); see also
 # https://developer.apple.com/library/content/documentation/AppleScript/ ...
 #  ... Conceptual/AppleScriptLangGuide/conceptual/ ...
 #  ... ASLR_lexical_conventions.html#//apple_ref/doc/uid/TP40000983-CH214-SW8
+
+# NOTE: insert line continuation character ¬ using Option-l (lower-case L):
+# https://developer.apple.com/library/content/documentation/AppleScript/ ...
+#  ... Conceptual/AppleScriptLangGuide/conceptual/ ...
+#  ... ASLR_lexical_conventions.html#//apple_ref/doc/uid/TP40000983-CH214-SW9
+
+# NOTE: about getting selected items from Finder (or the Desktop):
+# + a Finder window will always report at least one selected item
+#   as long as it is open (i.e. not minimized) and has focus
+# + an open Finder window can lose focus by clicking in an empty Desktop area
+# + items can also be selected on the Desktop; equivalent to Finder window
+
 # TODO: atom AppleScript package syntax highlighting fails with # comments
 
 
