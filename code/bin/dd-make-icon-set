@@ -122,8 +122,10 @@ cmd_exec='convert'
 # NOTE: source and target filenames are added separately
 # to work around issues with spaces in path or filenames;
 # see https://github.com/koalaman/shellcheck/wiki/SC2089
-# ImageMagick arguments: http://stackoverflow.com/q/9853325
-cmd_args_tmpl='-density %s -size %s'
+# ImageMagick arguments:  http://stackoverflow.com/q/9853325
+# required on El Capitan: http://stackoverflow.com/a/38128364
+cmd_args_tmpl='-alpha Set -colorspace sRGB -define '
+cmd_args_tmpl+='png:format=png32 -density %s -size %s'
 
 # filename:size:density
 read -r -d '' image_spec_list <<'EOT'
