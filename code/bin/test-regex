@@ -1,0 +1,67 @@
+#!/usr/bin/env sh
+
+# test-regex
+#
+# unit test script for regex to parse ssh connection string
+#
+# author  : stefan schablowski
+# contact : stefan.schablowski@desmodyne.com
+# created : 2017-05-17
+
+
+# ssh connection string: [username[:password]@]hostname[:port][/folder]
+
+
+# TODO: using 'hostname' as test string collides with hostname command
+# TODO: assert.sh apparently is a dead project:
+# https://github.com/lehmannro/assert.sh
+# TODO: this fails with even the simplest test:
+#   test #1 "my_host" failed:
+# 	  expected nothing
+# 	  got nothing
+
+
+source ../../ext/bin/assert.sh
+
+
+regex='\(\)\(\)\([a-z]+\)\(\)\(\)'
+
+
+test_str='my_host'
+
+result="$(echo "${test_str}" | sed -e "s|${regex}|\1|g")"
+assert "${result}" ''
+
+result="$(echo "${test_str}" | sed -e "s|${regex}|\2|g")"
+assert "${result}" ''
+
+result="$(echo "${test_str}" | sed -e "s|${regex}|\3|g")"
+assert "${result}" 'my_host'
+
+result="$(echo "${test_str}" | sed -e "s|${regex}|\4|g")"
+assert "${result}" ''
+
+result="$(echo "${test_str}" | sed -e "s|${regex}|\5|g")"
+assert "${result}" ''
+
+
+test_str='my_user@my_host'
+
+result="$(echo "${test_str}" | sed -e "s|${regex}|\1|g")"
+assert "${result}" 'my_user'
+
+result="$(echo "${test_str}" | sed -e "s|${regex}|\2|g")"
+assert "${result}" ''
+
+result="$(echo "${test_str}" | sed -e "s|${regex}|\3|g")"
+assert "${result}" 'my_host'
+
+result="$(echo "${test_str}" | sed -e "s|${regex}|\4|g")"
+assert "${result}" ''
+
+result="$(echo "${test_str}" | sed -e "s|${regex}|\5|g")"
+assert "${result}" ''
+
+
+# end of test suite
+assert_end examples
