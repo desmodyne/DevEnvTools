@@ -9,6 +9,11 @@
 # created : 2017-05-017
 
 
+# TODO: sanitize hostname argument ?
+# TODO: check if host is already mounted before attempting to mount
+# TODO: support unmounting: fusermount -u mountpoint as per man sshfs ?!?
+
+
 # -----------------------------------------------------------------------------
 # determine platform: http://stackoverflow.com/a/18434831
 
@@ -33,11 +38,12 @@ esac
 function usage
 {
     read -r -d '' msg_tmpl <<'EOT'
-Usage: %s <hostname>
+Usage: %s <conn string>
 
 mandatory arguments:
-  hostname              name of the remote host
-                        TODO: fully qualified ?
+  conn string           remote host connection string:
+                        [username[:password]@]hostname[:port][/path]
+                        instead of hostname, an IP address may be used
 
 optional arguments:
   -?, --help            print this help message
@@ -69,9 +75,9 @@ do
       # NOTE: must escape -?, seems to act as wildcard otherwise
       -\?|--help) usage; exit 1 ;;
 
-      *)  if [ -z "${hostname}" ]
+      *)  if [ -z "${conn_str}" ]
           then
-              hostname="$1"
+              conn_str="$1"
           else
               usage
               exit 1
@@ -82,23 +88,19 @@ do
     shift
 done
 
-
-# hostname is a mandatory command line argument
-if [ -z "${hostname}" ]
+# conn_str is a mandatory command line argument
+if [ -z "${conn_str}" ]
 then
     usage
     exit 1
 fi
 
 
-# TODO: SANITIZE HOSTNAME ARGUMENT!!!
-# TODO: check if host is already mounted before attempting to mount
-# TODO: support unmounting: fusermount -u mountpoint as per man sshfs ?!?
-# TODO: support entire user:pass@host:folder connection string
-
-
 # -----------------------------------------------------------------------------
 # configure script parameters
+
+# path to script to parse SSH connection string, relative to this script
+path_to_parse_script='../python/parse_ssh_conn_string.py'
 
 # TODO: look at ssh options:
 # http://stackoverflow.com/a/11283798
@@ -127,6 +129,36 @@ sshfs_args=''
 
 # base folder for all mount points
 mount_point_base="${HOME}/mnt/ssh"
+
+
+# -----------------------------------------------------------------------------
+# parse ssh connection string using external script
+
+# http://stackoverflow.com/a/1952480
+# TODO: this fails for multi-line string
+# http://stackoverflow.com/q/44111831
+# read username password hostname port path \
+#     <<< $("${path_to_parse_script}" "${conn_str}")
+
+# http://stackoverflow.com/a/13824135
+if ! lines=($("${path_to_parse_script}" "${conn_str}"))
+then
+    echo "failed to parse ssh connection string"
+    exit -1
+else
+    username="${lines[0]}"
+    password="${lines[1]}"
+    hostname="${lines[2]}"
+    port="${lines[3]}"
+    path="${lines[4]}"
+fi
+
+# conn_str must at least contain a hostname
+if [ -z "${hostname}" ]
+then
+    usage
+    exit 1
+fi
 
 
 # -----------------------------------------------------------------------------
