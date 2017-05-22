@@ -17,23 +17,14 @@ from unittest import main as ut_main, TestCase
 
 
 # ssh / scp connection string:
-# [username[:password]@]hostname[:port][/folder]
+# [username[:password]@]hostname[:port][/path]
 # instead of hostname, an IP address may be used
 
 
-def parse_conn_str(conn_str, keyword):
+def parse_conn_str(conn_str):
     '''
     TODO: doc
     '''
-
-    keyword_index_map = \
-    {
-        'username' : 1,
-        'password' : 2,
-        'hostname' : 3,
-        'port'     : 4,
-        'path'     : 5
-    }
 
     # http://stackoverflow.com/q/355723
     # http://stackoverflow.com/q/6321458
@@ -47,81 +38,78 @@ def parse_conn_str(conn_str, keyword):
     # print keyword_index_map[keyword]
     # print match.group(keyword_index_map[keyword])
 
-    # TODO: error handling
-    item  = match.group(keyword_index_map[keyword])
-
-    return '' if item == None else item
+    return match.groups()
 
 
 class test_hostname(TestCase):
     def setUp(self):
         self.test_string = 'hostname'
     def test_username(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'username'), '')
+        self.assertEqual(parse_conn_str(self.test_string)[0], None)
     def test_password(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'password'), '')
+        self.assertEqual(parse_conn_str(self.test_string)[1], None)
     def test_hostname(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'hostname'), 'hostname')
+        self.assertEqual(parse_conn_str(self.test_string)[2], 'hostname')
     def test_port(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'port'), '')
+        self.assertEqual(parse_conn_str(self.test_string)[3], None)
     def test_path(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'path'), '')
+        self.assertEqual(parse_conn_str(self.test_string)[4], None)
 
 class test_username_hostname(TestCase):
     def setUp(self):
         self.test_string = 'username@hostname'
     def test_username(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'username'), 'username')
+        self.assertEqual(parse_conn_str(self.test_string)[0], 'username')
     def test_password(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'password'), '')
+        self.assertEqual(parse_conn_str(self.test_string)[1], None)
     def test_hostname(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'hostname'), 'hostname')
+        self.assertEqual(parse_conn_str(self.test_string)[2], 'hostname')
     def test_port(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'port'), '')
+        self.assertEqual(parse_conn_str(self.test_string)[3], None)
     def test_path(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'path'), '')
+        self.assertEqual(parse_conn_str(self.test_string)[4], None)
 
 class test_username_password_hostname(TestCase):
     def setUp(self):
         self.test_string = 'username:password@hostname'
     def test_username(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'username'), 'username')
+        self.assertEqual(parse_conn_str(self.test_string)[0], 'username')
     def test_password(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'password'), 'password')
+        self.assertEqual(parse_conn_str(self.test_string)[1], 'password')
     def test_hostname(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'hostname'), 'hostname')
+        self.assertEqual(parse_conn_str(self.test_string)[2], 'hostname')
     def test_port(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'port'), '')
+        self.assertEqual(parse_conn_str(self.test_string)[3], None)
     def test_path(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'path'), '')
+        self.assertEqual(parse_conn_str(self.test_string)[4], None)
 
 class test_username_password_hostname_port(TestCase):
     def setUp(self):
         self.test_string = 'username:password@hostname:1234'
     def test_username(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'username'), 'username')
+        self.assertEqual(parse_conn_str(self.test_string)[0], 'username')
     def test_password(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'password'), 'password')
+        self.assertEqual(parse_conn_str(self.test_string)[1], 'password')
     def test_hostname(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'hostname'), 'hostname')
+        self.assertEqual(parse_conn_str(self.test_string)[2], 'hostname')
     def test_port(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'port'), '1234')
+        self.assertEqual(parse_conn_str(self.test_string)[3], '1234')
     def test_path(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'path'), '')
+        self.assertEqual(parse_conn_str(self.test_string)[4], None)
 
 class test_username_password_hostname_port_path(TestCase):
     def setUp(self):
         self.test_string = 'username:password@hostname:1234/path'
     def test_username(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'username'), 'username')
+        self.assertEqual(parse_conn_str(self.test_string)[0], 'username')
     def test_password(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'password'), 'password')
+        self.assertEqual(parse_conn_str(self.test_string)[1], 'password')
     def test_hostname(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'hostname'), 'hostname')
+        self.assertEqual(parse_conn_str(self.test_string)[2], 'hostname')
     def test_port(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'port'), '1234')
+        self.assertEqual(parse_conn_str(self.test_string)[3], '1234')
     def test_path(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'path'), '/path')
+        self.assertEqual(parse_conn_str(self.test_string)[4], '/path')
 
 
 def main():
