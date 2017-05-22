@@ -37,40 +37,91 @@ def parse_conn_str(conn_str, keyword):
 
     # http://stackoverflow.com/q/355723
     # http://stackoverflow.com/q/6321458
+    # http://stackoverflow.com/a/5254916
     # https://tools.ietf.org/html/rfc3986#page-50
-    regex = r'(?:([a-z_]+)(?::([a-z_]+))?@)?([a-z_]+)(?::([a-z_]+))?(?:/([a-z_/]+))?'
+    regex = r'(?:([a-z_]+)(?::([a-z_]+))?@)?([a-z_]+)(?::([0-9]+))?(?:(/[a-z_/]+))?'
+
     match = search(regex, conn_str)
 
     # print match.groups()
     # print keyword_index_map[keyword]
     # print match.group(keyword_index_map[keyword])
 
+    # TODO: error handling
     item  = match.group(keyword_index_map[keyword])
 
     return '' if item == None else item
 
-    # test_str = 'my_user:my_pass@my_host'
 
-
-class test_my_host(TestCase):
-
+class test_hostname(TestCase):
     def setUp(self):
-        self.test_string = 'my_host'
-
+        self.test_string = 'hostname'
     def test_username(self):
         self.assertEqual(parse_conn_str(self.test_string, 'username'), '')
-
     def test_password(self):
         self.assertEqual(parse_conn_str(self.test_string, 'password'), '')
-
     def test_hostname(self):
-        self.assertEqual(parse_conn_str(self.test_string, 'hostname'), 'my_host')
-
+        self.assertEqual(parse_conn_str(self.test_string, 'hostname'), 'hostname')
     def test_port(self):
         self.assertEqual(parse_conn_str(self.test_string, 'port'), '')
-
     def test_path(self):
         self.assertEqual(parse_conn_str(self.test_string, 'path'), '')
+
+class test_username_hostname(TestCase):
+    def setUp(self):
+        self.test_string = 'username@hostname'
+    def test_username(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'username'), 'username')
+    def test_password(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'password'), '')
+    def test_hostname(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'hostname'), 'hostname')
+    def test_port(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'port'), '')
+    def test_path(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'path'), '')
+
+class test_username_password_hostname(TestCase):
+    def setUp(self):
+        self.test_string = 'username:password@hostname'
+    def test_username(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'username'), 'username')
+    def test_password(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'password'), 'password')
+    def test_hostname(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'hostname'), 'hostname')
+    def test_port(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'port'), '')
+    def test_path(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'path'), '')
+
+class test_username_password_hostname_port(TestCase):
+    def setUp(self):
+        self.test_string = 'username:password@hostname:1234'
+    def test_username(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'username'), 'username')
+    def test_password(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'password'), 'password')
+    def test_hostname(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'hostname'), 'hostname')
+    def test_port(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'port'), '1234')
+    def test_path(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'path'), '')
+
+class test_username_password_hostname_port_path(TestCase):
+    def setUp(self):
+        self.test_string = 'username:password@hostname:1234/path'
+    def test_username(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'username'), 'username')
+    def test_password(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'password'), 'password')
+    def test_hostname(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'hostname'), 'hostname')
+    def test_port(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'port'), '1234')
+    def test_path(self):
+        self.assertEqual(parse_conn_str(self.test_string, 'path'), '/path')
 
 
 def main():
