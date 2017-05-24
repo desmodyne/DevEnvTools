@@ -22,6 +22,8 @@ from sys import argv
 
 
 # TODO: error handling
+# TODO: validate arguments
+# TODO: refactor to parse_URI ?
 
 
 def parse_conn_str(conn_str):
@@ -56,10 +58,10 @@ def main():
     TODO: doc
     '''
 
-    # TODO: process command line arguments
-
+    # TODO: make this the interface to stdin, stdout and stderr
     items = parse_conn_str(argv[1])
 
+    # result is returned as output on stdout
     # https://stackoverflow.com/a/13443597
     print '\n'.join(map(str, items))
 

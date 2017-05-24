@@ -100,6 +100,21 @@ class test_username_password_hostname_port_path(TestCase):
     def test_path(self):
         self.assertEqual(self.lines[4], '/path')
 
+class test_username_hostname_real_world_01(TestCase):
+    def setUp(self):
+        test_string = 'ssc@vm-kubuntu'
+        self.lines  = check_output([test_subject, test_string]).splitlines()
+    def test_username(self):
+        self.assertEqual(self.lines[0], 'ssc')
+    def test_password(self):
+        self.assertEqual(self.lines[1], '')
+    def test_hostname(self):
+        self.assertEqual(self.lines[2], 'vm-kubuntu')
+    def test_port(self):
+        self.assertEqual(self.lines[3], '')
+    def test_path(self):
+        self.assertEqual(self.lines[4], '')
+
 
 if __name__ == '__main__':
     '''
