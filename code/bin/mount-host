@@ -134,24 +134,33 @@ mount_point_base="${HOME}/mnt/ssh"
 # -----------------------------------------------------------------------------
 # parse ssh connection string using external script
 
-# http://stackoverflow.com/a/1952480
-# TODO: this fails for multi-line string
-# http://stackoverflow.com/q/44111831
-# read username password hostname port path \
-#     <<< $("${path_to_parse_script}" "${conn_str}")
+# The parse script returns five lines with username password hostname port path
+# parsed from ssh connection string; if that string does not have a component,
+# the corresponding line is empty. Bash makes it absurdly have to process that:
 
-# http://stackoverflow.com/a/13824135
-if ! lines=($("${path_to_parse_script}" "${conn_str}"))
+# https://stackoverflow.com/q/44111831 <-- own question
+# https://stackoverflow.com/q/1952404
+# https://stackoverflow.com/q/20913635
+# https://stackoverflow.com/q/13823706
+# https://unix.stackexchange.com/a/275797 <-- alternate approach
+
+if ! output=$("${path_to_parse_script}" "${conn_str}")
 then
     echo "failed to parse ssh connection string"
     exit -1
-else
-    username="${lines[0]}"
-    password="${lines[1]}"
-    hostname="${lines[2]}"
-    port="${lines[3]}"
-    path="${lines[4]}"
 fi
+
+lines=()
+
+while read -r line
+    do lines+=("${line}")
+done <<< "${output}"
+
+username="${lines[0]}"
+password="${lines[1]}"
+hostname="${lines[2]}"
+port="${lines[3]}"
+path="${lines[4]}"
 
 # conn_str must at least contain a hostname
 if [ -z "${hostname}" ]
@@ -160,15 +169,35 @@ then
     exit 1
 fi
 
+# ssh remote expression: [user@]host <-- no colon
+# sshfs remote expression: [user@]host:[dir]
+# TODO: support port using -p PORT / -o port=PORT
+# TODO: do ssh / sshfs support :password ?
+
+ssh_remote_expr="${hostname}"
+sshfs_remote_expr="${hostname}:"
+
+if [ ! -z "${username}" ]
+then
+    ssh_remote_expr="${username}@${ssh_remote_expr}"
+    sshfs_remote_expr="${username}@${sshfs_remote_expr}"
+fi
+
+# TODO: support path
+# if [ ! -z "${path}" ]
+# then
+#     sshfs_remote_expr="${sshfs_remote_expr}${path}"
+# fi
+
 
 # -----------------------------------------------------------------------------
 # test if remote host can be ssh'd into
 
-echo -n "Attempt to connect to ${hostname} with ${timeout}s timeout: "
+echo -n "Attempt to connect to ${ssh_remote_expr} with ${timeout}s timeout: "
 
 # ssh displays its own error messages,
 # catch output anyway for better formatting
-if output="$("${ssh_exec}" "${ssh_args}" "${hostname}" exit 2>&1)"
+if output="$("${ssh_exec}" "${ssh_args}" "${ssh_remote_expr}" exit 2>&1)"
 then
     echo 'OK'
 else
@@ -183,6 +212,7 @@ fi
 
 # TODO: this mounts home folder of user to connect with;
 # support parameter for remote folder to mount ?
+# TODO: add username to support mounting as different users ?
 
 mount_point="${mount_point_base}/${hostname}"
 
@@ -195,12 +225,12 @@ fi
 # -----------------------------------------------------------------------------
 # mount remote file system
 
-echo -n "Attempt to mount ${hostname} to ${mount_point}: "
+echo -n "Attempt to mount ${sshfs_remote_expr} to ${mount_point}: "
 
 # sshfs displays its own error messages,
 # catch output anyway for better formatting
 # TODO: add "${sshfs_args}" once set
-if output="$("${sshfs_exec}" "${hostname}:" "${mount_point}" 2>&1)"
+if output="$("${sshfs_exec}" "${sshfs_remote_expr}" "${mount_point}" 2>&1)"
 then
     echo 'OK'
 else
