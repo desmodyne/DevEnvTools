@@ -99,8 +99,21 @@ fi
 # -----------------------------------------------------------------------------
 # configure script parameters
 
-# path to script to parse SSH connection string, relative to this script
-path_to_parse_script='../python/parse_ssh_conn_string.py'
+# absolute path to this script: http://stackoverflow.com/a/9107028
+path_to_this_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# path from this script to project root
+rel_path_to_project_root='../..'
+
+# absolute path to project root
+path_to_project_root="$(realpath \
+                        "${path_to_this_script}/${rel_path_to_project_root}")"
+
+# path to script to parse SSH connection string, relative to project root
+rel_path_to_parse_script='code/python/parse_ssh_conn_string.py'
+
+# absolute path to script to parse SSH connection string
+path_to_parse_script="${path_to_project_root}/${rel_path_to_parse_script}"
 
 # TODO: look at ssh options:
 # http://stackoverflow.com/a/11283798
