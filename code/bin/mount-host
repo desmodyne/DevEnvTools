@@ -1,0 +1,253 @@
+#!/usr/bin/env bash
+
+# mount-host
+#
+# mount a remote file system and open applications on the mount point
+#
+# author  : stefan schablowski
+# contact : sschablowski@gmail.com
+# created : 2017-05-017
+
+
+# TODO: sanitize hostname argument ?
+# TODO: check if host is already mounted before attempting to mount
+# TODO: support unmounting: fusermount -u mountpoint as per man sshfs ?!?
+
+
+# -----------------------------------------------------------------------------
+# determine platform: http://stackoverflow.com/a/18434831
+
+case "${OSTYPE}" in
+    darwin*)
+        ;;
+    # TODO: support linux
+    # linux-gnu*)
+    #     ;;
+    *)
+        echo "Unsupported operating system: ${OSTYPE}"
+        exit -1
+        ;;
+esac
+
+
+# -----------------------------------------------------------------------------
+# define functions
+
+# http://stackoverflow.com/a/6212408
+
+function usage
+{
+    read -r -d '' msg_tmpl <<'EOT'
+Usage: %s <conn string>
+
+mandatory arguments:
+  conn string           remote host connection string:
+                        [username[:password]@]hostname[:port][/path]
+                        instead of hostname, an IP address may be used
+
+optional arguments:
+  -?, --help            print this help message
+EOT
+
+    # shellcheck disable=SC2059
+    printf "${msg_tmpl}\n" "${script_name}"
+}
+
+
+# -----------------------------------------------------------------------------
+# process command line arguments
+
+# name of this script: http://stackoverflow.com/q/192319
+script_name="$(basename "$0")"
+
+if [ $# -ne 1 ]
+then
+    usage
+    exit 1
+fi
+
+# http://stackoverflow.com/a/14203146
+while [ $# -gt 0 ]
+do
+    key="$1"
+
+    case "${key}" in
+      # NOTE: must escape -?, seems to act as wildcard otherwise
+      -\?|--help) usage; exit 1 ;;
+
+      *)  if [ -z "${conn_str}" ]
+          then
+              conn_str="$1"
+          else
+              usage
+              exit 1
+          fi
+    esac
+
+    # move past argument or value
+    shift
+done
+
+# conn_str is a mandatory command line argument
+if [ -z "${conn_str}" ]
+then
+    usage
+    exit 1
+fi
+
+
+# -----------------------------------------------------------------------------
+# configure script parameters
+
+# absolute path to this script: http://stackoverflow.com/a/9107028
+path_to_this_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# path from this script to project root
+rel_path_to_project_root='../..'
+
+# absolute path to project root
+path_to_project_root="$(realpath \
+                        "${path_to_this_script}/${rel_path_to_project_root}")"
+
+# path to script to parse SSH connection string, relative to project root
+rel_path_to_parse_script='code/python/parse_ssh_conn_string.py'
+
+# absolute path to script to parse SSH connection string
+path_to_parse_script="${path_to_project_root}/${rel_path_to_parse_script}"
+
+# TODO: look at ssh options:
+# http://stackoverflow.com/a/11283798
+# http://man.openbsd.org/ssh
+# http://man.openbsd.org/ssh_config.5
+
+# TODO: look at sshfs options:
+# call:~ ssc$ sshfs -h
+# usage: sshfs [user@]host:[dir] mountpoint [options]
+#  ...
+
+# ssh connection timeout in seconds
+timeout=10
+
+# executable to connect over ssh
+ssh_exec='ssh'
+
+# connection command arguments
+ssh_args="-o ConnectTimeout ${timeout}"
+
+# command executable to mount over ssh
+sshfs_exec='sshfs'
+
+# mount command arguments
+sshfs_args=''
+
+# base folder for all mount points
+mount_point_base="${HOME}/mnt/ssh"
+
+
+# -----------------------------------------------------------------------------
+# parse ssh connection string using external script
+
+# The parse script returns five lines with username password hostname port path
+# parsed from ssh connection string; if that string does not have a component,
+# the corresponding line is empty. Bash makes it absurdly have to process that:
+
+# https://stackoverflow.com/q/44111831 <-- own question
+# https://stackoverflow.com/q/1952404
+# https://stackoverflow.com/q/20913635
+# https://stackoverflow.com/q/13823706
+# https://unix.stackexchange.com/a/275797 <-- alternate approach
+
+if ! output=$("${path_to_parse_script}" "${conn_str}")
+then
+    echo "failed to parse ssh connection string"
+    exit -1
+fi
+
+lines=()
+
+while read -r line
+    do lines+=("${line}")
+done <<< "${output}"
+
+username="${lines[0]}"
+password="${lines[1]}"
+hostname="${lines[2]}"
+port="${lines[3]}"
+path="${lines[4]}"
+
+# conn_str must at least contain a hostname
+if [ -z "${hostname}" ]
+then
+    usage
+    exit 1
+fi
+
+# ssh remote expression: [user@]host <-- no colon
+# sshfs remote expression: [user@]host:[dir]
+# TODO: support port using -p PORT / -o port=PORT
+# TODO: do ssh / sshfs support :password ?
+
+ssh_remote_expr="${hostname}"
+sshfs_remote_expr="${hostname}:"
+
+if [ ! -z "${username}" ]
+then
+    ssh_remote_expr="${username}@${ssh_remote_expr}"
+    sshfs_remote_expr="${username}@${sshfs_remote_expr}"
+fi
+
+# TODO: support path
+# if [ ! -z "${path}" ]
+# then
+#     sshfs_remote_expr="${sshfs_remote_expr}${path}"
+# fi
+
+
+# -----------------------------------------------------------------------------
+# test if remote host can be ssh'd into
+
+echo -n "Attempt to connect to ${ssh_remote_expr} with ${timeout}s timeout: "
+
+# ssh displays its own error messages,
+# catch output anyway for better formatting
+if output="$("${ssh_exec}" "${ssh_args}" "${ssh_remote_expr}" exit 2>&1)"
+then
+    echo 'OK'
+else
+    echo
+    echo "${output}"
+    exit -1
+fi
+
+
+# -----------------------------------------------------------------------------
+# prepare mount point folder
+
+# TODO: this mounts home folder of user to connect with;
+# support parameter for remote folder to mount ?
+# TODO: add username to support mounting as different users ?
+
+mount_point="${mount_point_base}/${hostname}"
+
+if [ ! -d "${mount_point}" ]
+then
+    mkdir -p "${mount_point}"
+fi
+
+
+# -----------------------------------------------------------------------------
+# mount remote file system
+
+echo -n "Attempt to mount ${sshfs_remote_expr} to ${mount_point}: "
+
+# sshfs displays its own error messages,
+# catch output anyway for better formatting
+# TODO: add "${sshfs_args}" once set
+if output="$("${sshfs_exec}" "${sshfs_remote_expr}" "${mount_point}" 2>&1)"
+then
+    echo 'OK'
+else
+    echo
+    echo "${output}"
+    exit -1
+fi

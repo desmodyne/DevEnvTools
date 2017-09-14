@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+
+# build
+#
+# build all artifacts of this project
+#
+# author  : stefan schablowski
+# contact : sschablowski@gmail.com
+# created : 2017-05-02
+
+
+# TODO: verify required executables are available before attempting to use them;
+#  1. inspect PATH and add e.g. /usr/local/bin, then re-try
+#  2. if not found, display error message to tell user how to install, e.g.
+#
+# NOTE: on OS X, install required tools using
+#   brew install coreutils jq
+# http://brew.sh/
+# http://apple.stackexchange.com/a/69332
+
+# TODO: refactor relevant functionality out for use by other projects
+# TODO: establish convention on how to deal with built files already existing
+
+
+# -----------------------------------------------------------------------------
+# determine platform: http://stackoverflow.com/a/18434831
+
+case "${OSTYPE}" in
+    darwin*)
+        ;;
+    *)
+        echo "Unsupported operating system: ${OSTYPE}"
+        exit -1
+        ;;
+esac
+
+
+# -----------------------------------------------------------------------------
+# configure script parameters
+
+# absolute path to this script: http://stackoverflow.com/a/9107028
+path_to_this_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# path from this script to project root
+rel_path_to_project_root='../..'
+
+# absolute path to project root
+path_to_project_root="$(realpath \
+                        "${path_to_this_script}/${rel_path_to_project_root}")"
+
+# path to folder with application scripts, relative to project root
+path_to_app_scripts_folder='code/AppleScript'
+
+# path to folder with icon source files, relative to project root
+path_to_icon_source_folder='code/img/icon'
+
+# path to icon file, relative to application bundle root
+path_to_icon_file='Contents/Resources/applet.icns'
+
+# path to base of folders to store artifacts in, relative to project root
+path_to_artifacts_folder='tmp/artifacts'
+
+# path to folder to build in, relative to project root
+path_to_build_folder='tmp/build'
+
+# pattern to match application script files
+app_script_pattern='*.applescript'
+
+# suffix for application bundles
+app_bundle_suffix='app'
+
+# suffix for icon source files
+icon_source_suffix='svg'
+
+# suffix for icon set folders
+# http://stackoverflow.com/a/15193509
+icon_folder_suffix='iconset'
+
+# path to script to make icon set, relative to project root
+# TODO: this should reside elsewhere
+make_icon_set='code/bin/dd-make-icon-set'
+
+
+# -----------------------------------------------------------------------------
+# build this project
+
+
+pushd "${path_to_project_root}" > /dev/null
+
+
+if [ ! -d "${path_to_artifacts_folder}" ]
+then
+    mkdir -p "${path_to_artifacts_folder}"
+fi
+
+if [ ! -d "${path_to_build_folder}" ]
+then
+    mkdir -p "${path_to_build_folder}"
+fi
+
+# NOTE: not quoting glob is required for expansion by shell
+for filepath in "${path_to_app_scripts_folder}"/${app_script_pattern}
+do
+    # http://stackoverflow.com/a/36341390
+    filename="$(basename "${filepath%.*}")"
+    app_name="${path_to_build_folder}/${filename}.${app_bundle_suffix}"
+    icon_src="${path_to_icon_source_folder}/${filename}.${icon_source_suffix}"
+    icon_dir="${path_to_build_folder}/${filename}.${icon_folder_suffix}"
+    icns_tgt="${app_name}/${path_to_icon_file}"
+
+    # sample values:
+    #
+    # filepath: code/AppleScript/Open in Atom.applescript
+    # filename: Open in Atom
+    # app_name: tmp/build/Open in Atom.app
+    # icon_src: code/img/icon/Open in Atom.svg
+    # icon_dir: tmp/build/Open in Atom.iconset
+    # icns_tgt: tmp/build/Open in Atom.app/Contents/Resources/applet.icns
+    #
+    # echo "filepath: ${filepath}"
+    # echo "filename: ${filename}"
+    # echo "app_name: ${app_name}"
+    # echo "icon_src: ${icon_src}"
+    # echo "icon_dir: ${icon_dir}"
+    # echo "icns_tgt: ${icns_tgt}"
+
+    # compile script into application
+    echo "osacompile -o \"${app_name}\" \"${filepath}\""
+    if ! osacompile -o "${app_name}" "${filepath}"
+    then
+        continue
+    fi
+
+    # make icon set from source image
+    echo "${make_icon_set} \"${icon_src}\" \"${icon_dir}\""
+    if ! "${make_icon_set}" "${icon_src}" "${icon_dir}"
+    then
+        continue
+    fi
+
+    # turn icon set into icns file in application bundle
+    echo "iconutil --convert icns --output \"${icns_tgt}\" \"${icon_dir}\""
+    if ! iconutil --convert icns --output "${icns_tgt}" "${icon_dir}"
+    then
+        continue
+    fi
+
+    # copy finished application to artifacts folder
+    echo "cp -a \"${app_name}\" \"${path_to_artifacts_folder}/\""
+    if ! cp -a "${app_name}" "${path_to_artifacts_folder}/"
+    then
+        continue
+    fi
+
+    # TODO: copy to ~/Applications and auto-drag to Finder toolbar ?
+
+    echo
+done
+
+
+popd > /dev/null
