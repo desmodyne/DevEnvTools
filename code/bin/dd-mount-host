@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# mount-host
+# dd-mount-host
 #
-# mount a remote file system and open applications on the mount point
+# mount a remote file system
 #
 # author  : stefan schablowski
 # contact : stefan.schablowski@desmodyne.com
@@ -138,7 +138,8 @@ ssh_args="-o ConnectTimeout ${timeout}"
 sshfs_exec='sshfs'
 
 # mount command arguments
-sshfs_args=''
+# TODO: use this
+# sshfs_args=''
 
 # base folder for all mount points
 mount_point_base="${HOME}/mnt/ssh"
@@ -169,11 +170,12 @@ while read -r line
     do lines+=("${line}")
 done <<< "${output}"
 
+# TODO: support all these
 username="${lines[0]}"
-password="${lines[1]}"
+# password="${lines[1]}"
 hostname="${lines[2]}"
-port="${lines[3]}"
-path="${lines[4]}"
+# port="${lines[3]}"
+# path="${lines[4]}"
 
 # conn_str must at least contain a hostname
 if [ -z "${hostname}" ]
@@ -185,7 +187,7 @@ fi
 # ssh remote expression: [user@]host <-- no colon
 # sshfs remote expression: [user@]host:[dir]
 # TODO: support port using -p PORT / -o port=PORT
-# TODO: do ssh / sshfs support :password ?
+# TODO: does ssh / sshfs support :password ?
 
 ssh_remote_expr="${hostname}"
 sshfs_remote_expr="${hostname}:"
