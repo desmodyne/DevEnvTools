@@ -36,7 +36,8 @@ def parse_conn_str(conn_str):
     # http://stackoverflow.com/a/5254916
     # https://tools.ietf.org/html/rfc3986#page-50
     # TODO: document characters allowed per conn string component
-    regex = r'(?:([a-z_]+)(?::([a-z_]+))?@)?([a-z-]+)(?::([0-9]+))?(?:(/[a-z_/]+))?'
+    # TODO: unit-test this
+    regex = r'(?:([a-z_0-9]+)(?::([a-z_0-9]+))?@)?([a-z-0-9]+)(?::([0-9]+))?(?:(/[a-z_0-9/]+))?'
 
     match = search(regex, conn_str)
 
