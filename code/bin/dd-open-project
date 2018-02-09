@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+
+# dd-open-project
+#
+# run applications on a project folder to commence development
+#
+# author  : stefan schablowski
+# contact : stefan.schablowski@desmodyne.com
+# created : 2018-01-03
+
+
+# TODO: verify this works with whitespace in <project folder>
+# TODO: verify this works with relative paths to <project folder>
+# TODO: review error handling / script log output
+# TODO: add an op symlink to make call even shorter
+# TODO: add the complement script to close apps for project
+# TODO: use ~/.op.conf with project name : folder mapping
+# TODO: use bash auto-completion to suggest project names
+
+
+# -----------------------------------------------------------------------------
+# determine platform: http://stackoverflow.com/a/18434831
+
+case "${OSTYPE}" in
+    darwin*)
+        ;;
+    # TODO: support linux
+    # linux-gnu*)
+    #     ;;
+    *)
+        echo "Unsupported operating system: ${OSTYPE}"
+        exit -1
+        ;;
+esac
+
+
+# -----------------------------------------------------------------------------
+# define functions
+
+# http://stackoverflow.com/a/6212408
+
+function usage
+{
+    read -r -d '' msg_tmpl <<'EOT'
+Usage: %s <project folder>
+
+mandatory arguments:
+  project folder        root folder of development project to work on
+
+optional arguments:
+  -?, --help            print this help message
+EOT
+
+    # shellcheck disable=SC2059
+    printf "${msg_tmpl}\n" "${script_name}"
+}
+
+
+# -----------------------------------------------------------------------------
+# process command line arguments
+
+# name of this script: http://stackoverflow.com/q/192319
+script_name="$(basename "$0")"
+
+if [ $# -ne 1 ]
+then
+    usage
+    exit 1
+fi
+
+# http://stackoverflow.com/a/14203146
+while [ $# -gt 0 ]
+do
+    key="$1"
+
+    case "${key}" in
+      # NOTE: must escape -?, seems to act as wildcard otherwise
+      -\?|--help) usage; exit 1 ;;
+
+      *)  if [ -z "${project_folder}" ]
+          then
+              project_folder="$1"
+          else
+              usage
+              exit 1
+          fi
+    esac
+
+    # move past argument or value
+    shift
+done
+
+# project folder is a mandatory command line argument
+if [ -z "${project_folder}" ]
+then
+    usage
+    exit 1
+fi
+
+
+# -----------------------------------------------------------------------------
+# configure script parameters
+
+# applications to run on project folder
+applications='atom open stree'
+
+
+# -----------------------------------------------------------------------------
+# run applications on project folder
+
+
+pushd "${project_folder}" > /dev/null
+
+
+for application in ${applications}
+do
+    "${application}" .
+done
+
+
+popd > /dev/null
