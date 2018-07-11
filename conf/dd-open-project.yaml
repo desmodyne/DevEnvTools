@@ -18,6 +18,7 @@ corp:
     # human-friendly project name
     friendly_name: DesmoDyne Corporate
     # path to project development folder
+    # TODO: verify this works with whitespace in folder
     project_folder: ~/Data/Corporate/DesmoDyne
     # command to run to start developing on project;
     # paths are evaluated relative to project root

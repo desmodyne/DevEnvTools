@@ -9,13 +9,7 @@
 # created : 2018-01-03
 
 
-# TODO: verify this works with whitespace in <project folder>
-# TODO: verify this works with relative paths to <project folder>
-# TODO: review error handling / script log output
-# TODO: add an op symlink to make call even shorter
 # TODO: add the complement script to close apps for project
-# TODO: use ~/.op.conf with project name : folder mapping
-# TODO: use bash auto-completion to suggest project names
 
 
 # -----------------------------------------------------------------------------

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# op
+#
+# op bash completion support
+#
+# author  : stefan schablowski
+# contact : stefan.schablowski@desmodyne.com
+# created : 2018-07-10
+
+
+# NOTE: this is an almost identical copy of dd-open-project
+
+# based on https://debian-administration.org/article/ ...
+#           ... 317/An_introduction_to_bash_completion_part_2
+
+
+# TODO: auto-sync this with project conf
+project_ids="corp inf pmk"
+
+
+_op()
+{
+    local current
+    COMPREPLY=()
+    current="${COMP_WORDS[COMP_CWORD]}"
+    # TODO: fix shellcheck SC2207:
+    # https://github.com/koalaman/shellcheck/wiki/SC2207
+    # neither mapfile nor readarray are available on macOS
+    COMPREPLY=($(compgen -W "${project_ids}" -- ${current}))
+    return 0
+}
+
+complete -F _op op
