@@ -13,7 +13,7 @@
 #           ... 317/An_introduction_to_bash_completion_part_2
 
 
-project_ids="abc def ghi jkl mno"
+project_ids="pmk"
 
 
 _dd-open-project()

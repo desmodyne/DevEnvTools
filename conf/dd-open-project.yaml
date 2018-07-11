@@ -1,0 +1,27 @@
+---
+# dd-open-project.yaml
+#
+# dd-open-project YAML configuration file
+#
+# author  : stefan schablowski
+# contact : stefan.schablowski@desmodyne.com
+# created : 2018-07-11
+
+
+# TODO: split this up in one config file per project ?
+
+
+pmk:
+
+    # human-friendly project name
+    friendly_name: pimpmykiez.org
+
+    # path to project development folder
+    project_folder: ~/DevBase/DesmoDyne/Projects/pimpmykiez.org
+
+    # command to run to start developing on project;
+    # paths are evaluated relative to project root
+    folder_actions:
+        - atom .
+        - open .
+        - stree .
