@@ -13,7 +13,8 @@
 #           ... 317/An_introduction_to_bash_completion_part_2
 
 
-project_ids="pmk"
+# TODO: auto-sync this with project conf
+project_ids="corp inf pmk"
 
 
 _dd-open-project()

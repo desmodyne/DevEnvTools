@@ -131,7 +131,7 @@ else
     exit 1
 fi
 
-if output="$(jq -r ".${project_id}" <<< "${config}")"
+if output="$(jq -r ".[\"${project_id}\"]" <<< "${config}")"
 then
     proj_conf="${output}"
 else
