@@ -25,6 +25,29 @@ corp:
     folder_actions:
         - atom .
         - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+de:
+    friendly_name: DesmoDyne Development Environment
+    project_folder: ~/DevBase/DesmoDyne/Tools/DevEnv
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+dt:
+    friendly_name: DesmoDyne DebiTools
+    project_folder: ~/DevBase/DesmoDyne/Tools/DebiTools
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
         - stree .
 
 
@@ -35,6 +58,18 @@ inf:
     folder_actions:
         - atom .
         - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+mail:
+    friendly_name: DesmoDyne MailFlow
+    project_folder: ~/DevBase/DesmoDyne/Projects/MailFlow
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
         - stree .
 
 
@@ -45,4 +80,5 @@ pmk:
     folder_actions:
         - atom .
         - open .
+        - open -a Terminal .
         - stree .

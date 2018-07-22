@@ -14,7 +14,7 @@
 
 
 # TODO: auto-sync this with project conf
-project_ids="corp inf pmk"
+project_ids="corp de dt inf mail pmk"
 
 
 _dd-open-project()
