@@ -12,6 +12,17 @@
 
 
 # -----------------------------------------------------------------------------
+bl:
+    friendly_name: DesmoDyne Bash Library
+    project_folder: ~/DevBase/DesmoDyne/Tools/BashLib
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
 # project ID, passed as cmd line argument to dd-open-project
 # and also mentioned in ~/.bash_completion.d/dd-open-project
 corp:
