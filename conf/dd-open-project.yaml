@@ -93,3 +93,14 @@ pmk:
         - open .
         - open -a Terminal .
         - stree .
+
+
+# -----------------------------------------------------------------------------
+vault:
+    friendly_name: Vault
+    project_folder: ~/DevBase/DesmoDyne/Tools/vault
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .

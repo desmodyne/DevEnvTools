@@ -16,7 +16,7 @@
 
 
 # TODO: auto-sync this with project conf
-project_ids="bl corp de dt inf mail pmk"
+project_ids="bl corp de dt inf mail pmk vault"
 
 
 _op()
