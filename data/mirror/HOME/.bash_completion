@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+# .bash_completion
+#
+# custom, per-user bash completion support
+#
+# author  : stefan schablowski
+# contact : stefan.schablowski@desmodyne.com
+# created : 2018-07-11
+
+
+# https://serverfault.com/a/831184
+
+# this must be copied to ~/.bash_completion, must be executable and there must
+# be a symlink ~/.bash_completion.d/dd-open-project to
+#   ~/DevBase/DesmoDyne/Tools/DevEnv/code/completions/bash/dd-open-project
+# or to a non-development / installation location of that file
+
+for file in ~/.bash_completion.d/*
+do
+    if [ -f "${file}" ]
+    then
+        source "${file}"
+    fi
+done

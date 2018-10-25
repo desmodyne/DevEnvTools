@@ -1,0 +1,106 @@
+---
+# dd-open-project.yaml
+#
+# dd-open-project YAML configuration file
+#
+# author  : stefan schablowski
+# contact : stefan.schablowski@desmodyne.com
+# created : 2018-07-11
+
+
+# TODO: split this up in one config file per project ?
+
+
+# -----------------------------------------------------------------------------
+bl:
+    friendly_name: DesmoDyne Bash Library
+    project_folder: ~/DevBase/DesmoDyne/Tools/BashLib
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+# project ID, passed as cmd line argument to dd-open-project
+# and also mentioned in ~/.bash_completion.d/dd-open-project
+corp:
+    # human-friendly project name
+    friendly_name: DesmoDyne Corporate
+    # path to project development folder
+    # TODO: verify this works with whitespace in folder
+    project_folder: ~/Data/Corporate/DesmoDyne
+    # command to run to start developing on project;
+    # paths are evaluated relative to project root
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+de:
+    friendly_name: DesmoDyne Development Environment
+    project_folder: ~/DevBase/DesmoDyne/Tools/DevEnv
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+dt:
+    friendly_name: DesmoDyne DebiTools
+    project_folder: ~/DevBase/DesmoDyne/Tools/DebiTools
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+inf:
+    friendly_name: DesmoDyne Infrastructure Services
+    project_folder: ~/DevBase/DesmoDyne/Infrastructure/Services
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+mail:
+    friendly_name: DesmoDyne MailFlow
+    project_folder: ~/DevBase/DesmoDyne/Projects/MailFlow
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+pmk:
+    friendly_name: pimpmykiez.org
+    project_folder: ~/DevBase/DesmoDyne/Projects/pimpmykiez.org
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+vault:
+    friendly_name: Vault
+    project_folder: ~/DevBase/DesmoDyne/Tools/vault
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .

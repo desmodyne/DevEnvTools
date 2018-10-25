@@ -9,13 +9,8 @@
 # created : 2018-01-03
 
 
-# TODO: verify this works with whitespace in <project folder>
-# TODO: verify this works with relative paths to <project folder>
-# TODO: review error handling / script log output
-# TODO: add an op symlink to make call even shorter
 # TODO: add the complement script to close apps for project
-# TODO: use ~/.op.conf with project name : folder mapping
-# TODO: use bash auto-completion to suggest project names
+# TODO: use project folder as alternate cmd line arg and take default folder actions
 
 
 # -----------------------------------------------------------------------------
@@ -45,7 +40,7 @@ function usage
 Usage: %s <project folder>
 
 mandatory arguments:
-  project folder        root folder of development project to work on
+  project ID            ID of project to work on denoting configuration section
 
 optional arguments:
   -?, --help            print this help message
@@ -77,9 +72,9 @@ do
       # NOTE: must escape -?, seems to act as wildcard otherwise
       -\?|--help) usage; exit 1 ;;
 
-      *)  if [ -z "${project_folder}" ]
+      *)  if [ -z "${project_id}" ]
           then
-              project_folder="$1"
+              project_id="$1"
           else
               usage
               exit 1
@@ -90,8 +85,8 @@ do
     shift
 done
 
-# project folder is a mandatory command line argument
-if [ -z "${project_folder}" ]
+# project ID is a mandatory command line argument
+if [ -z "${project_id}" ]
 then
     usage
     exit 1
@@ -101,21 +96,87 @@ fi
 # -----------------------------------------------------------------------------
 # configure script parameters
 
-# applications to run on project folder
-applications='atom open stree'
+# absolute path to this script: http://stackoverflow.com/a/9107028
+path_to_this_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# path from this script to project root
+rel_path_to_project_root='../..'
+
+# absolute path to project root
+path_to_project_root="$(realpath \
+                        "${path_to_this_script}/${rel_path_to_project_root}")"
+
+# path to configuration file, relative to project root
+path_to_conf_file='conf/dd-open-project.yaml'
+
+
+# -----------------------------------------------------------------------------
+# load script configuration
+
+# NOTE: see config file for parameter documentation
+# TODO: error handling, e.g. check if key_file is available
+# TODO: review output, message only if error or -v / --verbose
+
+# http://mikefarah.github.io/yq
+if output="$(yq -j r "${path_to_project_root}/${path_to_conf_file}")"
+then
+    config="${output}"
+else
+    echo "${output}"
+    exit 1
+fi
+
+if output="$(jq -r ".[\"${project_id}\"]" <<< "${config}")"
+then
+    proj_conf="${output}"
+else
+    echo "${output}"
+    exit 1
+fi
+
+if [ -z "${proj_conf}" ] || [ "${proj_conf}" = 'null' ]
+then
+    msg="failed to find '${project_id}' project configuration"
+    msg+=" in $(realpath "${path_to_conf_file}")"
+    echo "${msg}"
+    exit 1
+fi
+
+# TODO: do something with friendly name
+# friendly_name="$( jq -r '.friendly_name'    <<< "${proj_conf}")"
+project_folder="$(jq -r '.project_folder'   <<< "${proj_conf}")"
+folder_actions="$(jq -r '.folder_actions[]' <<< "${proj_conf}")"
+
+# resolve environment variables and ~
+project_folder="$(eval echo "${project_folder}")"
 
 
 # -----------------------------------------------------------------------------
 # run applications on project folder
 
 
-pushd "${project_folder}" > /dev/null
+# NOTE: can not catch output for error handling: if pushd is executedd
+# in sub shell, the folder change only takes place in that sub shell
+if ! pushd "${project_folder}" > /dev/null
+then
+    echo "failed to pushd to project folder ${project_folder}:"
+    exit
+fi
 
 
-for application in ${applications}
+OLD_IFS="${IFS}" && IFS=$'\n'
+
+for folder_action in ${folder_actions}
 do
-    "${application}" .
+    # TODO: don't use eval
+    eval "${folder_action}"
 done
 
+IFS="${OLD_IFS}"
 
-popd > /dev/null
+
+if ! popd > /dev/null
+then
+    echo "failed to popd from project folder ${project_folder}"
+    exit
+fi
