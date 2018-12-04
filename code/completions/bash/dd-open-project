@@ -22,10 +22,7 @@ _dd-open-project()
     local current
     COMPREPLY=()
     current="${COMP_WORDS[COMP_CWORD]}"
-    # TODO: fix shellcheck SC2207:
-    # https://github.com/koalaman/shellcheck/wiki/SC2207
-    # neither mapfile nor readarray are available on macOS
-    COMPREPLY=($(compgen -W "${project_ids}" -- ${current}))
+    mapfile -t COMPREPLY < <(compgen -W "${project_ids}" -- ${current})
     return 0
 }
 

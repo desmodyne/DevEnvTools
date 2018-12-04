@@ -10,6 +10,7 @@
 
 
 # NOTE: this is an almost identical copy of dd-open-project
+# TODO: remove code duplication
 
 # based on https://debian-administration.org/article/ ...
 #           ... 317/An_introduction_to_bash_completion_part_2
@@ -24,10 +25,7 @@ _op()
     local current
     COMPREPLY=()
     current="${COMP_WORDS[COMP_CWORD]}"
-    # TODO: fix shellcheck SC2207:
-    # https://github.com/koalaman/shellcheck/wiki/SC2207
-    # neither mapfile nor readarray are available on macOS
-    COMPREPLY=($(compgen -W "${project_ids}" -- ${current}))
+    mapfile -t COMPREPLY < <(compgen -W "${project_ids}" -- ${current})
     return 0
 }
 
