@@ -107,9 +107,20 @@ inf:
 
 
 # -----------------------------------------------------------------------------
-mail:
-    friendly_name: DesmoDyne MailFlow
-    project_folder: ~/DevBase/DesmoDyne/Projects/MailFlow
+mfbe:
+    friendly_name: DesmoDyne MailFlow Backend
+    project_folder: ~/DevBase/DesmoDyne/Projects/MailFlow/Backend
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+mffe:
+    friendly_name: DesmoDyne MailFlow Frontend
+    project_folder: ~/DevBase/DesmoDyne/Projects/MailFlow/Frontend
     folder_actions:
         - atom .
         - open .
