@@ -41,6 +41,39 @@ corp:
 
 
 # -----------------------------------------------------------------------------
+dbe:
+    friendly_name: Diskurs Backend
+    project_folder: ~/DevBase/Diskurs/Backend
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+dfe:
+    friendly_name: Diskurs Frontend
+    project_folder: ~/DevBase/Diskurs/Frontend
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+dws:
+    friendly_name: Diskurs Website
+    project_folder: ~/DevBase/Diskurs/Website
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
 de:
     friendly_name: DesmoDyne Development Environment
     project_folder: ~/DevBase/DesmoDyne/Tools/DevEnv
