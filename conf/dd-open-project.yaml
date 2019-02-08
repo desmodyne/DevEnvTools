@@ -52,6 +52,17 @@ dbe:
 
 
 # -----------------------------------------------------------------------------
+dd:
+    friendly_name: desmodyne.com
+    project_folder: ~/DevBase/DesmoDyne/Projects/desmodyne.com
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
 dfe:
     friendly_name: Diskurs Frontend
     project_folder: ~/DevBase/Diskurs/Frontend
