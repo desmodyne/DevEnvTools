@@ -1,7 +1,7 @@
 ---
-# download-repos.<id>.yaml
+# dd-download-repos.<id>.yaml
 #
-# download-repos YAML configuration file
+# dd-download-repos YAML configuration file
 #
 # author  : stefan schablowski
 # contact : stefan.schablowski@desmodyne.com

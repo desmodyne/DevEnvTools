@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# download-repos
+# dd-download-repos
 #
 # clone or update a number of repositories from a gitlab instance
 #
@@ -10,7 +10,6 @@
 
 
 # TODO: document script prerequisites - ~/.git-credentials, etc.
-# TODO: this script should probably reside elsewhere (DevEnv ?)
 # TODO: bring existing repos to a defined state (check out develop ?)
 # TODO: use -j / --jobs to use git with multiple threads
 # TODO: preserve color in git log output
