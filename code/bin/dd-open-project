@@ -118,7 +118,7 @@ path_to_conf_file='conf/dd-open-project.yaml'
 # TODO: review output, message only if error or -v / --verbose
 
 # http://mikefarah.github.io/yq
-if output="$(yq -j r "${path_to_project_root}/${path_to_conf_file}")"
+if output="$(yq read --tojson "${path_to_project_root}/${path_to_conf_file}")"
 then
     config="${output}"
 else

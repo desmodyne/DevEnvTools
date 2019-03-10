@@ -14,7 +14,7 @@
 
 
 # TODO: auto-sync this with project conf
-project_ids="bl corp de dt inf mail pmk vault"
+project_ids="bl corp dbe dbf dbw de dt inf mfbe mffe pmk tb vault"
 
 
 _dd-open-project()
@@ -22,10 +22,7 @@ _dd-open-project()
     local current
     COMPREPLY=()
     current="${COMP_WORDS[COMP_CWORD]}"
-    # TODO: fix shellcheck SC2207:
-    # https://github.com/koalaman/shellcheck/wiki/SC2207
-    # neither mapfile nor readarray are available on macOS
-    COMPREPLY=($(compgen -W "${project_ids}" -- ${current}))
+    mapfile -t COMPREPLY < <(compgen -W "${project_ids}" -- ${current})
     return 0
 }
 

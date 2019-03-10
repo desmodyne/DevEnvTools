@@ -41,6 +41,50 @@ corp:
 
 
 # -----------------------------------------------------------------------------
+dbe:
+    friendly_name: Diskurs Backend
+    project_folder: ~/DevBase/Diskurs/Backend
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+dd:
+    friendly_name: desmodyne.com
+    project_folder: ~/DevBase/DesmoDyne/Projects/desmodyne.com
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+dfe:
+    friendly_name: Diskurs Frontend
+    project_folder: ~/DevBase/Diskurs/Frontend
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+dws:
+    friendly_name: Diskurs Website
+    project_folder: ~/DevBase/Diskurs/Website
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
 de:
     friendly_name: DesmoDyne Development Environment
     project_folder: ~/DevBase/DesmoDyne/Tools/DevEnv
@@ -74,9 +118,20 @@ inf:
 
 
 # -----------------------------------------------------------------------------
-mail:
-    friendly_name: DesmoDyne MailFlow
-    project_folder: ~/DevBase/DesmoDyne/Projects/MailFlow
+mfbe:
+    friendly_name: DesmoDyne MailFlow Backend
+    project_folder: ~/DevBase/DesmoDyne/Projects/MailFlow/Backend
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+mffe:
+    friendly_name: DesmoDyne MailFlow Frontend
+    project_folder: ~/DevBase/DesmoDyne/Projects/MailFlow/Frontend
     folder_actions:
         - atom .
         - open .
@@ -88,6 +143,17 @@ mail:
 pmk:
     friendly_name: pimpmykiez.org
     project_folder: ~/DevBase/DesmoDyne/Projects/pimpmykiez.org
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+tb:
+    friendly_name: DesmoDyne ToolBox
+    project_folder: ~/DevBase/DesmoDyne/Tools/ToolBox
     folder_actions:
         - atom .
         - open .
