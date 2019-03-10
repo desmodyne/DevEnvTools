@@ -17,8 +17,8 @@ path_to_creds_file:          ${HOME}/.git-credentials
 # absolute path to root folder of all projects
 path_to_dev_root:            ${HOME}/DevBase
 
-# path to json data folder, either absolute or relative to project root
-path_to_json_root:           data/DesmoDyne/json
+# absolute path to json data root folder
+path_to_json_root:           ${HOME}/DevBase/Temp/DevEnvTools/data/DesmoDyne/json
 
 
 # name of groups response json data file

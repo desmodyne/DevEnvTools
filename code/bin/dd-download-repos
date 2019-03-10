@@ -29,58 +29,23 @@
 
 
 echo
-echo 'Download gitlab repositories'
+echo 'download gitlab repositories'
 echo
-
-
-# -----------------------------------------------------------------------------
-# load functions from library and run as appropriate
-
-source ../../ext/BashLib/code/lib/dd-generic.lib
-
-if ! determine_platform;            then exit 1; fi
-if ! proc_cmd_line_args "$@";       then exit 1; fi
-
-
-# -----------------------------------------------------------------------------
-# verify external command line tools are available
-
-# TODO: do this using determine_path_to_sub_scripts from dd-generic.lib
-
-# list of external command line tools called by this script
-# req_tools="curl git jq ${realpath} yq"
-#
-# amended_path=false
-#
-# for req_tool in ${req_tools}
-# do
-#     if ! which "${req_tool}" > /dev/null
-#     then
-#         PATH="/usr/local/bin:${PATH}"
-#         amended_path=true
-#         break
-#     fi
-# done
-#
-# if [ "${amended_path}" = true ]
-# then
-#     for req_tool in ${req_tools}
-#     do
-#         if ! which "${req_tool}" > /dev/null
-#         then
-#             # TODO: display info how to install the missing tool
-#             echo "${req_tool}: No such file or directory"
-#             exit 1
-#         fi
-#     done
-# fi
 
 
 # -----------------------------------------------------------------------------
 # configure script parameters
 
-# path from this script to project root
-rel_path_to_project_root='../..'
+# absolute path to BashLib library file
+path_to_bashlib='/usr/local/lib/dd-bash-lib.sh'
+
+# array with alphabetical list of tools called by this script
+# shellcheck disable=SC2034
+req_tools=('curl' 'jq' 'yq')
+
+# array with paths to append to PATH
+# shellcheck disable=SC2034
+ext_paths=()
 
 # arguments for every curl call
 # http://stackoverflow.com/a/21109454
@@ -89,10 +54,47 @@ curl_args=(--show-error --silent)
 
 
 # -----------------------------------------------------------------------------
+# load BashLib
+
+# NOTE: this only tests if library can be sourced;
+# functions are only defined in "$(...)" subshell,
+# so a second source for use in here is required
+# https://github.com/koalaman/shellcheck/wiki/SC1090
+# shellcheck disable=SC1090
+if ! output="$(source "${path_to_bashlib}" 2>&1)"
+then
+    echo "${output}"
+    exit 1
+fi
+
+# shellcheck disable=SC1090
+source "${path_to_bashlib}"
+
+
+# -----------------------------------------------------------------------------
+# run BashLib boilerplate functions
+
+# NOTE: ideally, these function calls would be something like e.g.
+#   if ! output="$(configure_platform 2>&1)"
+#     ...
+# but on the one hand, they have their own output which should be displayed as
+# it occurs and more importantly, any changes to global variables would only be
+# effective in the subshell created by the braces around the function name and
+# would be lost to this script, effectively rendering the function call useless
+
+if ! configure_platform              ; then exit 1; fi
+if ! extend_path req_tools ext_paths ; then exit 1; fi
+if ! proc_cmd_line_args "${@}"       ; then exit 1; fi
+
+
+# -----------------------------------------------------------------------------
 # load script configuration
 
+# conf_file is defined by proc_cmd_line_args
+# https://github.com/koalaman/shellcheck/wiki/SC2154
+# shellcheck disable=SC2154
 echo -n 'load script configuration file: '
-if output="$(yq r -j "${config_file}" 2>&1)"
+if output="$(yq read "${conf_file}" --tojson 2>&1)"
 then
     echo 'OK'
     config="${output}"
@@ -137,23 +139,11 @@ echo 'OK'
 # -----------------------------------------------------------------------------
 # configure script parameters, cont.
 
-# if path to data folder is relative,
-# prepend path to root of this project
-# https://stackoverflow.com/a/11403912
-if [[ "${path_to_json_root}" != /* ]]
-then
-    # absolute path to this script: http://stackoverflow.com/a/9107028
-    here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-    # NOTE: realpath fails if path does not exist
-    path_to_project_root="$(realpath "${here}/${rel_path_to_project_root}")"
-    path_to_json_root="${path_to_project_root}/${path_to_json_root}"
-fi
-
 # resolve e.g. "${HOME}" into home folder
 # TODO: don't use eval: https://stackoverflow.com/a/41841838
 path_to_creds_file="$(eval echo "${path_to_creds_file}")"
 path_to_dev_root="$(  eval echo "${path_to_dev_root}"  )"
+path_to_json_root="$( eval echo "${path_to_json_root}")"
 
 
 echo -n 'extract personal access token from git credentials file: '
