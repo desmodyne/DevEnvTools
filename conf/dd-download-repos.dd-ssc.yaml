@@ -51,19 +51,11 @@ sed_expr_tmpl:               s|\(https://\)\(gitlab.com\)|\\1%s@\\2|g
 exclude_projects:            DesmoDyne/Corporate
 
 # map parts of the gitlab namespace to local folders
-# TODO: support more than one mapping
-map_match:                   dd-ssc-projects
-map_replace:                 Burst
-
-# a gitlab group can not be called 'Projects',
-# so the group is renamed to 'Projects0'; see also
-# https://gitlab.com/gitlab-org/gitlab-ce/issues/26407
-
-# gitlab group name used as workaround
-workaround_match:            Projects0
-
-# folder name used instead
-workaround_replace:          Projects
+map_gitlab_to_local:
+- match:                     dd-ssc-projects
+  replace:                   Burst
+- match:                     Crumb0
+  replace:                   Crumb
 
 # git repo user name
 git_name:                    Stefan Schablowski

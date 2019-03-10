@@ -113,15 +113,12 @@ for attr in api_path_groups             \
             git_name                    \
             gitlab_username             \
             groups_resp_file            \
-            map_match                   \
-            map_replace                 \
+            map_gitlab_to_local         \
             path_to_creds_file          \
             path_to_dev_root            \
             path_to_json_root           \
             projects_resp_tmpl          \
-            sed_expr_tmpl               \
-            workaround_match            \
-            workaround_replace
+            sed_expr_tmpl
 do
     # https://unix.stackexchange.com/a/68349
     declare "${attr}"="$(jq -r ".${attr}" <<< "${config}")"
@@ -227,6 +224,18 @@ echo -n 'extract group names and IDs: '
 if output="$(jq -r '.[] | "\(.name):\(.id)"' <<< "${json_response}" 2>&1)"
 then
     groups_and_ids="${output}"
+    echo 'OK'
+else
+    echo 'ERROR'
+    echo "${output}"
+    exit 1
+fi
+
+echo -n 'prepare gitlab to local mappings: '
+jq_expr='.[] | "\(.match):\(.replace)"'
+if output="$(jq -r "${jq_expr}" <<< "${map_gitlab_to_local}" 2>&1)"
+then
+    gitlab_to_local_mappings="${output}"
     echo 'OK'
 else
     echo 'ERROR'
@@ -345,19 +354,18 @@ do
             continue
         fi
 
-        # shellcheck disable=SC2154
-        if grep -q "${map_match}" <<< "${namespace}"
-        then
-            echo "${i}replace ${map_match} by ${map_replace}"
-            namespace="${namespace//${map_match}/${map_replace}}"
-        fi
+        for gitlab_to_local_mapping in ${gitlab_to_local_mappings}
+        do
+            match="$(  cut -d : -f 1 <<< "${gitlab_to_local_mapping}")"
+            replace="$(cut -d : -f 2 <<< "${gitlab_to_local_mapping}")"
 
-        # shellcheck disable=SC2154
-        if grep -q "${workaround_match}" <<< "${namespace}"
-        then
-            echo "${i}apply workaround for gitlab Projects bug"
-            namespace="${namespace//${workaround_match}/${workaround_replace}}"
-        fi
+            # shellcheck disable=SC2154
+            if grep -q "${match}" <<< "${namespace}"
+            then
+                echo "${i}replace ${match} by ${replace}"
+                namespace="${namespace//${match}/${replace}}"
+            fi
+        done
 
         namespace_folder="${path_to_dev_root}/${namespace}"
 
