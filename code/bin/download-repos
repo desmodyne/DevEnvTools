@@ -1,0 +1,609 @@
+#!/usr/bin/env bash
+
+# download-repos
+#
+# clone or update a number of repositories from a gitlab instance
+#
+# author  : stefan schablowski
+# contact : stefan.schablowski@desmodyne.com
+# created : 2017-05-18
+
+
+# TODO: document script prerequisites - ~/.git-credentials, etc.
+# TODO: this script should probably reside elsewhere (DevEnv ?)
+# TODO: bring existing repos to a defined state (check out develop ?)
+# TODO: use -j / --jobs to use git with multiple threads
+# TODO: preserve color in git log output
+
+
+# NOTE: different online repository services structure things differently, e.g.
+# in gitlab, projects are arranged in groups (and subgroups thereof) and
+#   each project has one git repository (plus an issue tracker, wiki, etc.);
+# in github, a user or organization own a number of repositories
+#   (at least in their REST API v3 with GraphQL / v4 being the current version;
+#    also, there are projects in v3 under /repos/:owner/:repo/projects (?!?))
+# in bitbucket, there are projects which can have any number of repos
+#
+# TODO: at some point, one script might compensate for those differences;
+# for the moment, it seems most straight forward to use one specialized script
+# per online repository service and accept the duplicate code this incurs
+
+
+echo
+echo 'Download gitlab repositories'
+echo
+
+
+# -----------------------------------------------------------------------------
+# load functions from library and run as appropriate
+
+source ../../ext/BashLib/code/lib/dd-generic.lib
+
+if ! determine_platform;            then exit 1; fi
+if ! proc_cmd_line_args "$@";       then exit 1; fi
+
+
+# -----------------------------------------------------------------------------
+# verify external command line tools are available
+
+# TODO: do this using determine_path_to_sub_scripts from dd-generic.lib
+
+# list of external command line tools called by this script
+# req_tools="curl git jq ${realpath} yq"
+#
+# amended_path=false
+#
+# for req_tool in ${req_tools}
+# do
+#     if ! which "${req_tool}" > /dev/null
+#     then
+#         PATH="/usr/local/bin:${PATH}"
+#         amended_path=true
+#         break
+#     fi
+# done
+#
+# if [ "${amended_path}" = true ]
+# then
+#     for req_tool in ${req_tools}
+#     do
+#         if ! which "${req_tool}" > /dev/null
+#         then
+#             # TODO: display info how to install the missing tool
+#             echo "${req_tool}: No such file or directory"
+#             exit 1
+#         fi
+#     done
+# fi
+
+
+# -----------------------------------------------------------------------------
+# configure script parameters
+
+# path from this script to project root
+rel_path_to_project_root='../..'
+
+# arguments for every curl call
+# http://stackoverflow.com/a/21109454
+# https://github.com/koalaman/shellcheck/wiki/SC2086#exceptions
+curl_args=(--show-error --silent)
+
+
+# -----------------------------------------------------------------------------
+# load script configuration
+
+echo -n 'load script configuration file: '
+if output="$(yq r -j "${config_file}" 2>&1)"
+then
+    echo 'OK'
+    config="${output}"
+else
+    echo 'ERROR'
+    echo "${output}"
+    exit 1
+fi
+
+echo -n 'extract script configuration attributes: '
+for attr in api_path_groups             \
+            api_root                    \
+            api_tmpl_projects_by_group  \
+            exclude_projects            \
+            git_email                   \
+            git_name                    \
+            gitlab_username             \
+            groups_resp_file            \
+            map_match                   \
+            map_replace                 \
+            path_to_creds_file          \
+            path_to_dev_root            \
+            path_to_json_root           \
+            projects_resp_tmpl          \
+            sed_expr_tmpl               \
+            workaround_match            \
+            workaround_replace
+do
+    # https://unix.stackexchange.com/a/68349
+    declare "${attr}"="$(jq -r ".${attr}" <<< "${config}")"
+    # https://unix.stackexchange.com/a/41418
+    if [ -z "${!attr}" ] || [ "${!attr}" = 'null' ]
+    then
+        echo 'ERROR'
+        echo "failed to get ${attr} attribute from configuration"
+        exit 1
+    fi
+done
+echo 'OK'
+
+
+# -----------------------------------------------------------------------------
+# configure script parameters, cont.
+
+# if path to data folder is relative,
+# prepend path to root of this project
+# https://stackoverflow.com/a/11403912
+if [[ "${path_to_json_root}" != /* ]]
+then
+    # absolute path to this script: http://stackoverflow.com/a/9107028
+    here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+    # NOTE: realpath fails if path does not exist
+    path_to_project_root="$(realpath "${here}/${rel_path_to_project_root}")"
+    path_to_json_root="${path_to_project_root}/${path_to_json_root}"
+fi
+
+# resolve e.g. "${HOME}" into home folder
+# TODO: don't use eval: https://stackoverflow.com/a/41841838
+path_to_creds_file="$(eval echo "${path_to_creds_file}")"
+path_to_dev_root="$(  eval echo "${path_to_dev_root}"  )"
+
+
+echo -n 'extract personal access token from git credentials file: '
+# TODO: gitlab_username might not be unique in git creds file
+# shellcheck disable=SC2154
+if output="$(grep "${gitlab_username}" "${path_to_creds_file}" 2>&1)"
+then
+    pat="${output}"
+    pat="${pat##*:}"
+    pat="${pat%%@*}"
+
+    if [ -n "${pat}" ]
+    then
+        echo 'OK'
+        gitlab_token="${pat}"
+    else
+        echo 'ERROR'
+        echo "${output}"
+        exit 1
+    fi
+else
+    echo 'ERROR'
+    echo "${output}"
+    exit 1
+fi
+
+
+if [ ! -d "${path_to_json_root}" ]
+then
+    echo -n 'create data folder: '
+    if output="$(mkdir -p "${path_to_json_root}" 2>&1)"
+    then
+        echo 'OK'
+    else
+        echo 'ERROR'
+        echo "${output}"
+        exit 1
+    fi
+fi
+
+
+# -----------------------------------------------------------------------------
+# get list of gitlab groups
+
+# https://docs.gitlab.com/ee/api/groups.html#list-groups
+
+# http request url
+# shellcheck disable=SC2154
+req_url="${api_root}/${api_path_groups}"
+
+echo -n 'get list of gitlab groups: '
+if output="$(curl --header  "PRIVATE-TOKEN: ${gitlab_token}"  \
+                  --request GET                               \
+                  "${curl_args[@]}"                           \
+                  "${req_url}" 2>&1)"
+then
+    json_response="${output}"
+    echo 'OK'
+else
+    echo 'ERROR'
+    echo "${output}"
+    exit 1
+fi
+
+# use jq to align output with convention and sort by full group path
+echo -n 'save gitlab groups to file: '
+# shellcheck disable=SC2154
+if output="$(jq 'sort_by(.full_path)' <<< "${json_response}" 2>&1 \
+                 > "${path_to_json_root}/${groups_resp_file}")"
+then
+    echo 'OK'
+else
+    echo 'ERROR'
+    echo "${output}"
+    exit 1
+fi
+
+echo -n 'extract group names and IDs: '
+# NOTE: for some reason, the opening brackets are escaped,
+# the closing ones not: http://stackoverflow.com/a/31418194
+if output="$(jq -r '.[] | "\(.name):\(.id)"' <<< "${json_response}" 2>&1)"
+then
+    groups_and_ids="${output}"
+    echo 'OK'
+else
+    echo 'ERROR'
+    echo "${output}"
+    exit 1
+fi
+
+
+# -----------------------------------------------------------------------------
+# get list of projects in each group
+
+# https://docs.gitlab.com/ee/api/groups.html#list-a-group-s-projects
+
+echo
+echo 'process groups:'
+
+if [ -z "${groups_and_ids}" ]
+then
+    echo '  <no groups in gitlab account>'
+    exit 0
+fi
+
+# http request url template
+# shellcheck disable=SC2154
+req_url_tmpl="${api_root}/${api_tmpl_projects_by_group}"
+
+exit_code=0
+
+for line_01 in ${groups_and_ids}
+do
+    i='  '
+
+    group_name="$(cut -d : -f 1 <<< "${line_01}")"
+    group_id="$(  cut -d : -f 2 <<< "${line_01}")"
+
+    echo
+    echo "${i}group ${group_name}:"
+
+    # shellcheck disable=SC2059
+    req_url="$(printf "${req_url_tmpl}" "${group_id}")"
+
+    echo -n "${i}get projects info: "
+    if output="$(curl --header  "PRIVATE-TOKEN: ${gitlab_token}"  \
+                      --request GET                               \
+                      "${curl_args[@]}"                           \
+                      "${req_url}" 2>&1)"
+    then
+        json_response="${output}"
+        echo 'OK'
+    else
+        echo 'ERROR'
+        echo "${i}${output}"
+        exit_code=1
+        continue
+    fi
+
+    # shellcheck disable=SC2059
+    # shellcheck disable=SC2154
+    projects_resp_file="$(printf "${projects_resp_tmpl}" "${group_name}")"
+
+    echo -n "${i}save projects info to file: "
+    if output="$(jq 'sort_by(.path_with_namespace)' <<< "${json_response}" 2>&1 \
+                     > "${path_to_json_root}/${projects_resp_file}")"
+    then
+        echo 'OK'
+    else
+        echo 'ERROR'
+        echo "${i}${output}"
+        exit_code=1
+        continue
+    fi
+
+    # NOTE: use % as separator instead of : as url contains :
+    # project name % project namespace % git repo http url
+    jq_expr='.[] | "\(.name)%\(.namespace.full_path)'
+    jq_expr+='%\(.path_with_namespace)%\(.http_url_to_repo)"'
+
+    echo -n "${i}extract relevant project attributes: "
+    if output="$(jq -r "${jq_expr}" \
+                       "${path_to_json_root}/${projects_resp_file}" 2>&1)"
+    then
+        project_info="${output}"
+        echo 'OK'
+    else
+        echo 'ERROR'
+        echo "${i}${output}"
+        exit_code=1
+        continue
+    fi
+
+    echo
+    echo "${i}process projects:"
+
+    if [ -z "${project_info}" ]
+    then
+        echo "${i}<no projects in group>"
+        continue
+    fi
+
+    for line_02 in ${project_info}
+    do
+        i='    '
+
+        proj_name="$(cut -d % -f 1 <<< "${line_02}")"
+        namespace="$(cut -d % -f 2 <<< "${line_02}")"
+        full_path="$(cut -d % -f 3 <<< "${line_02}")"
+        repo_url="$( cut -d % -f 4 <<< "${line_02}")"
+
+        echo
+        echo "${i}project ${proj_name}:"
+
+        # shellcheck disable=SC2154
+        if [[ "${full_path}" == *"${exclude_projects}"* ]]
+        then
+            echo "${i}project is on the exclude list; skip"
+            continue
+        fi
+
+        # shellcheck disable=SC2154
+        if grep -q "${map_match}" <<< "${namespace}"
+        then
+            echo "${i}replace ${map_match} by ${map_replace}"
+            namespace="${namespace//${map_match}/${map_replace}}"
+        fi
+
+        # shellcheck disable=SC2154
+        if grep -q "${workaround_match}" <<< "${namespace}"
+        then
+            echo "${i}apply workaround for gitlab Projects bug"
+            namespace="${namespace//${workaround_match}/${workaround_replace}}"
+        fi
+
+        namespace_folder="${path_to_dev_root}/${namespace}"
+
+        if [ ! -d "${namespace_folder}" ]
+        then
+            echo -n "${i}create namespace folder ${namespace_folder}: "
+            if output="$(mkdir -p "${namespace_folder}" 2>&1)"
+            then
+                echo 'OK'
+            else
+                echo 'ERROR'
+                echo "${i}${output}"
+                exit_code=1
+                continue
+            fi
+        fi
+
+        project_folder="${namespace_folder}/${proj_name}"
+
+        # shellcheck disable=SC2059,SC2154
+        sed_expr="$(printf "${sed_expr_tmpl}" "${gitlab_username}")"
+
+        # insert username into git repo url
+        # shellcheck disable=SC2154
+        repo_url="$("${sed}" "${sed_expr}" <<< "${repo_url}")"
+
+        # TODO: review indenting live output from external application
+
+        if [ -d "${project_folder}/.git" ]
+        then
+            echo "${i}fetch ${repo_url}..."
+
+            # display git output as it occurs
+            git -C "${project_folder}" fetch --prune --recurse-submodules 2>&1 \
+                | sed "s|^|${i}|"
+
+            # shellcheck disable=SC2181
+            if [ "$?" -ne 0 ]
+            then
+                exit_code=1
+                continue
+            fi
+
+            echo "${i}pull ${repo_url}..."
+
+            # display git output as it occurs
+            git -C "${project_folder}" pull 2>&1 | sed "s|^|${i}|"
+
+            # shellcheck disable=SC2181
+            if [ "$?" -ne 0 ]
+            then
+                exit_code=1
+                continue
+            fi
+        else
+            echo "${i}clone ${repo_url}..."
+
+            # display git output as it occurs
+            git clone --recurse-submodules \
+                      "${repo_url}" "${project_folder}" 2>&1 | sed "s|^|${i}|"
+
+            # shellcheck disable=SC2181
+            if [ "$?" -ne 0 ]
+            then
+                exit_code=1
+                continue
+            fi
+        fi
+
+        # NOTE: if user.name is not set, git returns with exit code 1
+        echo -n "${i}get repository user name: "
+        if output="$(git -C "${project_folder}" config user.name 2>&1)"
+        then
+            echo 'OK'
+            existing_git_name="${output}"
+        else
+            if [ -z "${output}" ]
+            then
+                echo 'OK'
+
+                # TODO: remove code duplication
+                echo -n "${i}configure repository user name: "
+                # shellcheck disable=SC2154
+                if output="$(git -C "${project_folder}" \
+                                 config user.name "${git_name}" 2>&1)"
+                then
+                    echo 'OK'
+                else
+                    echo 'ERROR'
+                    echo "${i}${output}"
+                    exit_code=1
+                    continue
+                fi
+            else
+                echo 'ERROR'
+                echo "${i}${output}"
+                exit_code=1
+                continue
+            fi
+        fi
+
+        # shellcheck disable=SC2154
+        if [ "${existing_git_name}" != "${git_name}" ]
+        then
+            if [ -n "${existing_git_name}" ]
+            then
+                msg="a different git user name ${existing_git_name} is "
+                msg+='already configured in repository; will not overwrite'
+                echo "${i}${msg}"
+            else
+                echo -n "${i}configure repository user name: "
+                # shellcheck disable=SC2154
+                if output="$(git -C "${project_folder}" \
+                                 config user.name "${git_name}" 2>&1)"
+                then
+                    echo 'OK'
+                else
+                    echo 'ERROR'
+                    echo "${i}${output}"
+                    exit_code=1
+                    continue
+                fi
+            fi
+        fi
+
+        # NOTE: if user.email is not set, git returns with exit code 1
+        echo -n "${i}get repository user email address: "
+        if output="$(git -C "${project_folder}" config user.email 2>&1)"
+        then
+            echo 'OK'
+            existing_git_email="${output}"
+        else
+            if [ -z "${output}" ]
+            then
+                echo 'OK'
+
+                echo -n "${i}configure repository email address: "
+                # shellcheck disable=SC2154
+                if output="$(git -C "${project_folder}" \
+                                 config user.email "${git_email}" 2>&1)"
+                then
+                    echo 'OK'
+                else
+                    echo 'ERROR'
+                    echo "${i}${output}"
+                    exit_code=1
+                    continue
+                fi
+            else
+                echo 'ERROR'
+                echo "${i}${output}"
+                exit_code=1
+                continue
+            fi
+        fi
+
+        # shellcheck disable=SC2154
+        if [ "${existing_git_email}" != "${git_email}" ]
+        then
+            if [ -n "${existing_git_email}" ]
+            then
+                msg='a different git user email address '
+                msg+="${existing_git_email} is already configured "
+                msg+='in repository; will not overwrite'
+                echo "${i}${msg}"
+            else
+                echo -n "${i}configure repository email address: "
+                # shellcheck disable=SC2154
+                if output="$(git -C "${project_folder}" \
+                                 config user.email "${git_email}" 2>&1)"
+                then
+                    echo 'OK'
+                else
+                    echo 'ERROR'
+                    echo "${i}${output}"
+                    exit_code=1
+                    continue
+                fi
+            fi
+        fi
+
+        # TODO: this check is incomplete:
+        # https://stackoverflow.com/a/28619760/
+
+        # NOTE: git config gitflow.branch.master seems to
+        #   either exit 0 and print the name of the master branch
+        #   or     exit 1 with no output
+        echo -n "${i}get repository git flow status: "
+        if output="$(git -C "${project_folder}" \
+                         config gitflow.branch.master 2>&1)"
+        then
+            if [ -n "${output}" ]
+            then
+                echo 'OK'
+                existing_gf_master="${output}"
+            else
+                echo 'ERROR: git flow master branch name cannot be empty'
+                exit_code=1
+                continue
+            fi
+        else
+            if [ -n "${output}" ]
+            then
+                echo 'ERROR'
+                echo "${i}${output}"
+                exit_code=1
+                continue
+            else
+                # git config exit code 1 and no output simply means
+                # git flow has not been configured yet; not an error
+                echo 'OK'
+            fi
+        fi
+
+        if [ -z "${existing_gf_master}" ]
+        then
+            echo "${i}initialize git flow..."
+
+            # display git output as it occurs
+            git -C "${project_folder}" flow init --defaults 2>&1 \
+                | sed "s|^|${i}|"
+
+            # shellcheck disable=SC2181
+            if [ "$?" -ne 0 ]
+            then
+                exit_code=1
+                continue
+            fi
+        fi
+    done
+done
+
+
+echo
+echo 'gitlab repository download complete'
+echo
+
+exit "${exit_code}"
