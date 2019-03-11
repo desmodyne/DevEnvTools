@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+# dd-open-project
+#
+# dd-open-project bash completion support
+#
+# author  : stefan schablowski
+# contact : stefan.schablowski@desmodyne.com
+# created : 2018-07-10
+
+
+# based on https://debian-administration.org/article/ ...
+#           ... 317/An_introduction_to_bash_completion_part_2
+
+
+# TODO: auto-sync this with project conf
+project_ids="bl corp dbe dbf dbw de dt inf mfbe mffe pmk tb vault"
+
+
+_dd-open-project()
+{
+    local current
+    COMPREPLY=()
+    current="${COMP_WORDS[COMP_CWORD]}"
+    mapfile -t COMPREPLY < <(compgen -W "${project_ids}" -- ${current})
+    return 0
+}
+
+complete -F _dd-open-project dd-open-project
