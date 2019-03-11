@@ -90,10 +90,10 @@ if ! get_conf_file_arg "${@}"        ; then exit 1; fi
 # -----------------------------------------------------------------------------
 # load script configuration
 
+echo -n 'load script configuration file: '
 # conf_file is defined by get_conf_file_arg
 # https://github.com/koalaman/shellcheck/wiki/SC2154
 # shellcheck disable=SC2154
-echo -n 'load script configuration file: '
 if output="$(yq read "${conf_file}" --tojson 2>&1)"
 then
     echo 'OK'
@@ -233,6 +233,7 @@ fi
 
 echo -n 'prepare gitlab to local mappings: '
 jq_expr='.[] | "\(.match):\(.replace)"'
+# shellcheck disable=SC2154
 if output="$(jq -r "${jq_expr}" <<< "${map_gitlab_to_local}" 2>&1)"
 then
     gitlab_to_local_mappings="${output}"
