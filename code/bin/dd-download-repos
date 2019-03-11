@@ -84,13 +84,13 @@ source "${path_to_bashlib}"
 
 if ! configure_platform              ; then exit 1; fi
 if ! extend_path req_tools ext_paths ; then exit 1; fi
-if ! proc_cmd_line_args "${@}"       ; then exit 1; fi
+if ! get_conf_file_arg "${@}"        ; then exit 1; fi
 
 
 # -----------------------------------------------------------------------------
 # load script configuration
 
-# conf_file is defined by proc_cmd_line_args
+# conf_file is defined by get_conf_file_arg
 # https://github.com/koalaman/shellcheck/wiki/SC2154
 # shellcheck disable=SC2154
 echo -n 'load script configuration file: '
