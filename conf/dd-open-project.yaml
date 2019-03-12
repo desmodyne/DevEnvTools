@@ -41,6 +41,28 @@ corp:
 
 
 # -----------------------------------------------------------------------------
+crbe:
+    friendly_name: Crumb Backend
+    project_folder: ~/DevBase/Crumb/Projects/crumb/Backend
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
+crm:
+    friendly_name: Crumb Mobile
+    project_folder: ~/DevBase/Crumb/Projects/crumb/Mobile
+    folder_actions:
+        - atom .
+        - open .
+        - open -a Terminal .
+        - stree .
+
+
+# -----------------------------------------------------------------------------
 dbe:
     friendly_name: Diskurs Backend
     project_folder: ~/DevBase/Diskurs/Backend
