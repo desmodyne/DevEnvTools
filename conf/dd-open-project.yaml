@@ -86,8 +86,8 @@ dws:
 
 # -----------------------------------------------------------------------------
 de:
-    friendly_name: DesmoDyne Development Environment
-    project_folder: ~/DevBase/DesmoDyne/Tools/DevEnv
+    friendly_name: DesmoDyne Development Environment Tools
+    project_folder: ~/DevBase/DesmoDyne/Tools/DevEnvTools
     folder_actions:
         - atom .
         - open .
