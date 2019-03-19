@@ -176,6 +176,17 @@ do
         echo "failed to get ${attr} attribute from configuration"
         exit 1
     fi
+
+    # TODO: get TODO string from conf
+    if [ "${!attr}" = 'TODO' ]
+    then
+        echo 'ERROR'
+        echo "'${attr}' configuration attribute has not been set;"
+        echo 'please review the new configuration file'
+        echo "   ${conf_file}"
+        echo 'then run this script again'
+        exit 1
+    fi
 done
 echo 'OK'
 
