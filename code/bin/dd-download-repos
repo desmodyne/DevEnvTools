@@ -39,6 +39,13 @@ echo
 # absolute path to BashLib library file
 path_to_bashlib='/usr/local/lib/dd-bash-lib.sh'
 
+# absolute path to sample script configuration file
+path_to_sample_conf='/usr/local/share/dd-dev-env-tools/'
+path_to_sample_conf+='dd-download-repos.sample.yaml'
+
+# absolute path to script configuration file for current user
+path_to_conf_file="${HOME}/.dd-tools/DevEnvTools/$(basename "$0").${USER}.yaml"
+
 # array with alphabetical list of tools called by this script
 # shellcheck disable=SC2034
 req_tools=('curl' 'git' 'jq' 'yq')
@@ -84,15 +91,55 @@ source "${path_to_bashlib}"
 
 if ! configure_platform              ; then exit 1; fi
 if ! extend_path req_tools ext_paths ; then exit 1; fi
-if ! get_conf_file_arg "${@}"        ; then exit 1; fi
 
 
 # -----------------------------------------------------------------------------
 # load script configuration
 
-echo -n 'load script configuration file: '
-# conf_file is defined by get_conf_file_arg
+conf_file="${path_to_conf_file}"
+
+echo -n 'find user script configuration file: '
 # https://github.com/koalaman/shellcheck/wiki/SC2154
+# shellcheck disable=SC2154
+if [ -f "${conf_file}" ]
+then
+    echo 'OK'
+else
+    echo 'NOT FOUND'
+
+    user_conf_dir="$(dirname "${conf_file}")"
+    if [ ! -d "${user_conf_dir}" ]
+    then
+        echo -n 'create user configuration folder: '
+        if output="$(mkdir -p "${user_conf_dir}")"
+        then
+            echo 'OK'
+        else
+            echo 'ERROR'
+            echo "${output}"
+            exit 1
+        fi
+    fi
+
+    echo -n 'copy sample file to user script configuration file: '
+    if output="$(cp "${path_to_sample_conf}" "${conf_file}" 2>&1)"
+    then
+        echo 'OK'
+    else
+        echo 'ERROR'
+        echo "${output}"
+        exit 1
+    fi
+
+    echo
+    echo 'please review the new configuration file'
+    echo "   ${conf_file}"
+    echo 'then run this script again'
+    echo
+    exit 1
+fi
+
+echo -n 'load script configuration file: '
 # shellcheck disable=SC2154
 if output="$(yq read "${conf_file}" --tojson 2>&1)"
 then
