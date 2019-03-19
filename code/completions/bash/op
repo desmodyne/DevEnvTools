@@ -17,7 +17,7 @@
 
 
 # TODO: auto-sync this with project conf
-project_ids="bl corp dbe dbf dbw de dt inf mfbe mffe pmk tb vault"
+project_ids="bl corp crbe crm dbe dbf dbw de dt inf mfbe mffe pmk tb vault"
 
 
 _op()

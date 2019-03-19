@@ -1,0 +1,65 @@
+---
+# dd-download-repos.<id>.yaml
+#
+# dd-download-repos YAML configuration file
+#
+# author  : stefan schablowski
+# contact : stefan.schablowski@desmodyne.com
+# created : 2018-01-17
+
+
+# absolute path to git credentials file with gitlab personal access token
+# https://docs.gitlab.com/ce/user/profile/personal_access_tokens.html
+# git default creds file: https://git-scm.com/docs/git-credential-store
+# NOTE: file is typically created at this location by Ansible task
+path_to_creds_file:          ${HOME}/.git-credentials
+
+# absolute path to root folder of all projects
+path_to_dev_root:            ${HOME}/DevBase
+
+# absolute path to json data root folder
+path_to_json_root:           ${HOME}/DevBase/Temp/DevEnvTools/data/DesmoDyne/json
+
+
+# name of groups response json data file
+groups_resp_file:            groups.response.json
+
+# template for name of projects response json data file
+projects_resp_tmpl:          projects.%s.response.json
+
+
+# gitlab REST API root endpoint:
+# https://docs.gitlab.com/ee/api
+api_root:                    https://gitlab.com/api/v4
+
+# path into REST API to groups GET end point:
+# https://docs.gitlab.com/ee/api/groups.html
+api_path_groups:             groups
+
+# template for path into REST API to GET projects by group:
+# https://docs.gitlab.com/ee/api/groups.html#list-a-group-s-projects
+api_tmpl_projects_by_group:  groups/%s/projects
+
+
+# gitlab username
+gitlab_username:             dd-ssc
+
+# sed expression template to insert username into git repo url
+sed_expr_tmpl:               s|\(https://\)\(gitlab.com\)|\\1%s@\\2|g
+
+# paths of projects to skip; use path_with_namespace from response file:
+# if there any repos you don't want to sync, add their gitlab.com path, e.g.
+exclude_projects:            DesmoDyne/Corporate
+
+# map parts of the gitlab namespace to local folders
+map_gitlab_to_local:
+- match:                     dd-ssc-projects
+  replace:                   Burst
+- match:                     Crumb0
+  replace:                   Crumb
+
+# git repo user name
+git_name:                    Stefan Schablowski
+
+# git repo email address
+git_email:                   stefan.schablowski@desmodyne.com

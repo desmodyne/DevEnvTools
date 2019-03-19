@@ -42,23 +42,25 @@ api_tmpl_projects_by_group:  groups/%s/projects
 
 
 # gitlab username
-gitlab_username:             dd-ssc
+# TODO: replace 'TODO' by your gitlab username
+gitlab_username:             TODO
 
 # sed expression template to insert username into git repo url
 sed_expr_tmpl:               s|\(https://\)\(gitlab.com\)|\\1%s@\\2|g
 
-# paths of projects to skip; use path_with_namespace from response file
-exclude_projects:            DesmoDyne/Corporate
+# paths of projects to skip; use path_with_namespace from response file:
+# if there any repos you don't want to sync, add their gitlab.com path, e.g.
+exclude_projects:            dd-ssc/my-unsynced-repo
 
 # map parts of the gitlab namespace to local folders
 map_gitlab_to_local:
-- match:                     dd-ssc-projects
-  replace:                   Burst
 - match:                     Crumb0
   replace:                   Crumb
 
 # git repo user name
-git_name:                    Stefan Schablowski
+# TODO: replace 'TODO' by your full name
+git_name:                    TODO
 
 # git repo email address
-git_email:                   stefan.schablowski@desmodyne.com
+# TODO: replace 'TODO' by the email address you're using on gitlab.com
+git_email:                   TODO
